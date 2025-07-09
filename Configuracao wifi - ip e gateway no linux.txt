@@ -1,0 +1,9 @@
+#!/bin/sh 
+iwconfig wlan0 essid casa 
+iwconfig wlan0 channel 10 
+iwconfig wlan0 key restricted 1234567890 
+ifconfig wlan0 up 
+ifconfig wlan0 192.168.0.2 netmask 255.255.255.0 
+route del default 
+route add default wlan0 
+route add default gw 192.168.0.1 
