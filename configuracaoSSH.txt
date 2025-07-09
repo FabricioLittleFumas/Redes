@@ -1,0 +1,54 @@
+Comandos para determinar o status do sshd
+ 
+	RHEL --> chkconfig --list sshd
+	Fedora --> systemctl status sshd.service
+	Ubuntu --> status ssh
+
+Iniciar o ssh 
+	RHEL --> service sshd start 
+	Fedora --> systemctl start sshd.service 
+	Ubuntu --> service ssh start 
+
+Iniciar o ssh na inicializacao 
+	RHEL --> chkconfig sshd on
+	Fedora --> systemctl enable sshd.service
+	Ubuntu --> update.rc.d ssh defaults
+
+Quando é instalado o ssh no Ubuntu já será configurado para iniciar na inicialização
+
+O comando para me conectar ao usuario remoto é
+ssh usuario@endereçoIP
+ssh smart@192.168.0.0
+
+ssh fabricio@localhost "comando --argumentos"
+
+se x11 estiver habilitado no servidor para ferramentas graficas no servidor
+X11Forwarding /etc/sshd/sshd_config
+
+ssh-X 
+ssh-X fabricio@10.140.67.23 system-config-date 
+
+Copiando arquivos entre sistemas com scp e rsync
+scp 
+
+scp /home/chris/memo jhndoe@10.140.67.23:/tmp
+
+scp origem destino
+
+
+rm	-rf	/tmp/man1/
+$ rsync	-avl	johndoe@10.140.67.23:/usr/share/man/man1/	/tmp/
+
+rsync nao mantem copias repetidas atributos nao sao perdidos
+links simbolicos sao mantidos
+
+$	rsync	-avl	/usr/share/man/man1	localhost:/tmp
+ johndoe@10.140.67.23’s	password:	***************
+ sending	incremental	file	list
+ man1/
+ $	rsync	-avl	--delete	johndoe@10.140.67.23:/usr/share/man/man1	/tmp
+ johndoe@10.140.67.23’s	password:	***************
+ sending	incremental	file	list
+ deleting	man1/services
+
+delete mantem o sincronismo entre os dois diretorios de backup
