@@ -1,0 +1,71 @@
+apt-get install wpasupplicant 
+Uma dica é que, ao usar o Ubuntu você deve primeiro abrir o arquivo 
+"/etc/apt/sources.list" e descomentar a linha referente ao repositório Universe, como em: 
+deb http://br.archive.ubuntu.com/ubuntu dapper universe 
+
+Rode o comando "wpa_passphrase" seguido do SSID da rede e a passphrase (a senha), 
+como em: 
+wpa_passphrase minharede minhapassphrase 
+
+Agora edite (ou crie) o arquivo "/etc/wpa_supplicant.conf", de forma que ele contenha 
+apenas as linhas retornadas pelo comando. Você pode usar também o comando abaixo 
+(como root), que já modifica automaticamente o arquivo, matando os dois coelhos com 
+uma cajadada só: 
+# wpa_passphrase minharede minhapassphrase > /etc/wpa_supplicant.conf 
+
+Agora vem o comando que ativa o wpa_supplicant, especificando a placa de rede que 
+será usada, o arquivo de configuração que acabamos de criar e o driver que será usado: 
+# wpa_supplicant -i wlan0 -c /etc/wpa_supplicant.conf -d -D wext
+
+wext: Este é um driver genérico, que dá suporte à maioria das placas. Ele está se 
+tornando a opção "default", com a incorporação de cada vez mais drivers, que 
+antes eram separados. Nas versões recentes ele incorpora também suporte às 
+placas ativadas através do ndiswrapper (usando o driver do Windows) e também 
+às placas IPW2200.  
+ndiswrapper: Este é o driver para placas ativadas através do ndiswrapper, que, 
+nas versões recentes, foi incorporado ao wext. Note que muitas placas 
+funcionam perfeitamente no Ndiswrapper em redes sem encriptação ou WEP, 
+mas ficam instáveis ao usar o WPA, justamente porque ele utiliza mais camadas 
+e por isso tem uma possibilidade maior de apresentar problemas diversos. 
+ipw: Driver para as placas com os chipsets Intel IPW2100 e IPW2200, usadas 
+nos notebooks Intel Centrino. Assim como no caso do ndiswrapper, o driver foi 
+incorporado ao wext nas versões recentes. De qualquer forma, o driver antigo 
+continua disponível e você pode experimentar ambos caso esteja tendo 
+problemas para ativar a placa.  
+madwifi: Este é o driver para placas com chipset Atheros, utilizadas (por 
+exemplo) em alguns notebooks Toshiba.  
+broadcom: Este é o driver nativo para as placas com chipset Broadcom, 
+desenvolvido via engenharia reversa. Estas placas podem ser configuradas 
+também através do Ndiswrapper. Cheque a forma como a placa está configurada 
+no seu micro. 
+prism54, hermes e atmel: Estes três drivers são os mais incomuns, usados 
+(respectivamente) pelas placas com chipset Prism (em suas várias versões), 
+Hermes, Hermes II e Atmel.  
+
+Se você usa o Ubuntu, Kurumin ou qualquer outra distribuição derivada do Debian, 
+abra o arquivo "/etc/network/interfaces". Adicione as duas linhas abaixo, contendo os 
+parâmetros do wpa_supplicant, no final do arquivo. Note que agora adicionamos 
+também a opção "w", específica para uso em scripts de inicialização: 
+up wpa_supplicant -i wlan0 -c /etc/wpa_supplicant.conf -wB -D wext 
+down killall wpa_supplicant 
+
+Lembre-se de substituir o "wlan0" e "wext" pelos parâmetros corretos no seu caso. Para 
+que fique tudo certo, o arquivo deve conter também uma seção com os endereços 
+usados pela placa. Veja um exemplo de arquivo completo: 
+# /etc/network/interfaces -- configuration file for ifup(8), ifdown(8) 
+auto lo wlan0 
+iface lo inet loopback 
+iface wlan0 inet static 
+address 192.168.1.56 
+netmask 255.255.255.0 
+network 192.168.1.0 
+broadcast 192.168.1.255 
+gateway 192.168.1.254 
+up wpa_supplicant -i wlan0 -c /etc/wpa_supplicant.conf -wB -D wext 
+down killall wpa_supplicant 
+
+Uma observação importante é que, ao ser configurado para rodar em background, o 
+wpa_supplicant ficará o tempo todo tentando se conectar às redes wireless configuradas. 
+Se você quiser se conectar a uma rede cabeada, deverá, além de configurar a rede, 
+desativar o wpa_supplicant, usando o comando: 
+# killall wpa_supplicant

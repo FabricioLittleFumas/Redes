@@ -1,0 +1,23 @@
+Neste caso o arquivo ficaria: 
+# Rede de casa, com WPA (esta é a entrada gerada pelo wpa_passphrase) 
+network={ 
+ssid="casa" 
+key_mgmt=WPA-PSK 
+psk=2ceaa0388fa863213f5f527055846101dc449c9a569c1e43ea535a3344d3dc32 
+priority=5 
+}
+ # Rede do escritório, com WEP: 
+network={ 
+ssid="escritorio" 
+key_mgmt=NONE 
+wep_key0=ADADA54321 
+wep_tx_keyidx=0 
+priority=3 
+}
+ # Redes públicas, sem encriptação 
+network={ 
+ssid="" 
+key_mgmt=NONE 
+priority=1 
+}
+
