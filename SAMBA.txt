@@ -1,0 +1,316 @@
+Os pacotes do Samba recebem nomes um pouco diferentes nas distribuições derivadas 
+do Debian e no Fedora e outras distribuições derivadas do Red Hat. Veja:  
+Pacote Debian Fedora  
+Servidor: samba samba 
+Cliente: smbclient samba-client 
+Documentação samba-doc samba-doc 
+Swat: swat samba-swat 
+
+Com os pacotes instalados, use os comandos:  
+# /etc/init.d/samba start  
+# /etc/init.d/samba stop  
+... para iniciar e parar o serviço. Por padrão, ao instalar o pacote é criado um link na 
+pasta "/etc/rc5.d", que ativa o servidor automaticamente durante o boot. Para desativar a 
+inicialização automática, use o comando: 
+# update-rc.d -f samba remove  
+Pata reativá-lo mais tarde, use:  
+# update-rc.d -f samba defaults 
+No Fedora e Mandriva, os comandos para iniciar e parar o serviço são: 
+# service smb start 
+# service smb stop 
+
+Cadastrando os usuários 
+Depois de instalado, o próximo passo é cadastrar os logins e senhas dos usuários que 
+terão acesso ao servidor. Esta é uma peculiaridade do Samba: ele roda como um 
+programa sobre o sistema e está subordinado às permissões de acesso deste. Por isso, 
+ele só pode dar acesso para usuários que, além de estarem cadastrados no Samba, 
+também estão cadastrados no sistema.  
+
+Existem duas abordagens possíveis. Você pode criar usuários "reais", usando o 
+comando adduser ou um utilitário como o "user-admin" (disponível no Fedora e no 
+Debian, através do pacote gnome-system-tools). Ao usar o adduser, o comando fica:  
+# adduser maria 
+Uma segunda opção é criar usuários "castrados", que terão acesso apenas ao Samba. 
+Esta abordagem é mais segura, pois os usuários não poderão acessar o servidor via SSH 
+ou Telnet, por exemplo, o que abriria brecha para vários tipos de ataques. Neste caso, 
+você cria os usuários adicionando os parâmetros que orientam o adduser a não criar o 
+diretório home e a manter a conta desativada até segunda ordem: 
+# adduser --disabled-login --no-create-home maria  
+
+Isso cria uma espécie de usuário fantasma que, para todos os fins, existe e pode acessar 
+arquivos do sistema (de acordo com as permissões de acesso), mas que, por outro lado, 
+não pode fazer login (nem localmente, nem remotamente via SSH), nem possui 
+diretório home.  
+
+De qualquer uma das duas formas, depois de criar os usuários no sistema você deve 
+cadastrá-los no Samba, usando o comando "smbpasswd -a", como em: 
+# smbpasswd -a maria 
+
+Um detalhe importante é que, ao usar clientes Windows 95 ou 98, você deve marcar a 
+opção de login como "Login do Windows" e não como "Cliente para redes Microsoft" 
+(que é o default) na configuração de rede (Painel de controle > Redes). 
+
+
+Depois de criados os logins de acesso, falta agora apenas configurar o Samba para se 
+integrar à rede e compartilhar as pastas desejadas, trabalho facilitado pelo Swat. A 
+segunda opção é editar manualmente o arquivo de configuração do Samba, o 
+"/etc/samba/smb.conf", como veremos mais adiante. Neste caso, o ideal é começar a 
+partir de um arquivo pré-configurado, alterando apenas as opções necessárias. Você 
+pode baixar o arquivo modelo, que é utilizado na instalação do Samba no Kurumin no 
+http://www.guiadohardware.net/kurumin/modelos/
+ .
+
+
+
+Configurando o Samba usando o Swat 
+
+
+No Debian, Slackware e também no Gentoo, o Swat é inicializado através do inetd. A 
+função do inetd e xinetd é parecida, eles monitoram determinadas portas TCP e 
+carregam serviços sob demanda. Isto evita que utilitários que são acessados 
+esporadicamente (como o Swat) precisem ficar ativos o tempo todo, consumindo 
+recursos do sistema. Apesar disso, a configuração dos dois é diferente: no caso das 
+distribuições que usam o inetd, você ainda precisa adicionar (ou descomentar) a linha 
+abaixo no arquivo de configuração do inetd, o "/etc/inetd.conf": 
+swat stream tcp nowait.400 root /usr/sbin/tcpd /usr/sbin/swat 
+Para que a alteração entre em vigor, reinicie o inetd com o comando: 
+# /etc/init.d/inetd restart 
+Para acessar o Swat, basta abrir o Konqueror ou outro Browser disponível e acessar o 
+endereço http://localhost:901
+ . No prompt de login, forneça a senha de root (do 
+sistema) para acessar. Ao abrir o Swat, você verá um menu como o do screenshot 
+abaixo, com vários links para a documentação disponível sobre o Samba, que você pode 
+consultar para se aprofundar no sistema. Na parte de cima, estão os links para as seções 
+da configuração, que é o que nos interessa. 
+
+Para acessar o Swat, basta abrir o Konqueror ou outro Browser disponível e acessar o 
+endereço http://localhost:901
+ . No prompt de login, forneça a senha de root (do 
+sistema) para acessar. Ao abrir o Swat, você verá um menu como o do screenshot 
+abaixo, com vários links para a documentação disponível sobre o Samba, que você pode 
+consultar para se aprofundar no sistema. Na parte de cima, estão os links para as seções 
+da configuração, que é o que nos interessa.
+
+
+A seguir temos a opção "interfaces", que permite limitar os acessos ao servidor se você 
+tiver mais de uma placa de rede. É o caso, por exemplo, de quem acessa via ADSL ou 
+cabo e possui uma segunda placa de rede para compartilhar a conexão com os micros da 
+rede local. Nestes casos, a placa da web será reconhecida como eth0, enquanto a placa 
+da rede local será reconhecida como eth1, por exemplo.  
+Você pode, então, preencher o campo com o endereço da placa da rede local (eth1). 
+Assim, o Samba só aceitará conexões vindas dos micros da rede local, descartando 
+automaticamente todas as tentativas de acesso vindas da internet. Caso o campo 
+permaneça vazio, o Samba permite acessos vindos de todas as placas de rede, e é 
+necessário bloquear os acessos provenientes da internet usando o firewall.
+
+A opção share oferece um nível de segurança semelhante ao de uma máquina Windows 
+98. Os compartilhamentos podem ser acessados por todos os usuários, através da conta 
+guest. Em compensação, esta opção é a mais simples de configurar e pode ser útil em 
+pequenas redes onde não há necessidade de segurança. A opção user é a mais 
+recomendável, pois permite especificar exatamente quais usuários terão acesso a cada 
+compartilhamento, como em um servidor NT ou Windows 2003. 
+
+Naturalmente, para 
+que isso funcione, é necessário que você tenha registrado todos os usuários no Linux e 
+no Samba (como vimos anteriormente), e que os clientes Windows efetuem login na 
+rede usando estes mesmos logins e senhas, ou os forneçam na hora de acessar os 
+compartilhamentos.  
+Utilizando o modo user, as permissões de acesso aos compartilhamentos do samba 
+ficam condicionadas às permissões de acesso de cada usuário. Por exemplo, se você 
+compartilhar a pasta /home/maria/arquivos, por default apenas a usuária maria terá 
+permissão para gravar novos arquivos e alterar o conteúdo da pasta. 
+
+Para que outros usuários tenham acesso à pasta, você deve dar permissão a eles, criando 
+um novo grupo e dando permissão de escrita para os integrantes do mesmo. Outra opção 
+é adicionar os demais usuários no grupo "maria" (cada usuário possui um grupo com o 
+mesmo nome do login, criado no momento em que é cadastrado) e configurar as 
+permissões de acesso de forma que o grupo possa escrever na pasta. Você pode fazer a 
+administração de grupos usando o "users-admin", que facilita bastante as coisas ao 
+trabalhar com um grande número de usuários. Lembre-se que no Debian ele é instalado 
+através do pacote "gnome-system-tools". No Fedora ele se chama "system-config
+users". 
+
+Ou seja, é necessário fazer com que os usuários do grupo, ou todos os usuários do 
+sistema, possam escrever na pasta, evitando que as permissões do sistema conflitem 
+com as permissões configuradas no Samba. Se configuro o Samba para permitir que o 
+usuário "joao" possa escrever no compartilhamento, mas a configuração das permissões 
+da pasta compartilhada não permitem isso, o joao vai continuar sem conseguir escrever. 
+Ao criar compartilhamentos no Samba, é preciso se preocupar com as duas coisas.  
+
+
+Mais abaixo, temos a opção Encrypt Password. Ela também é importantíssima, e deve 
+ficar sempre ativada (Encrypt Password = Yes). O Windows 95 original não suporta 
+encriptação de senhas, por isso só poderá se conectar ao servidor caso a opção seja 
+configurada com o valor "No". Porém, o Windows 95 OSR/2, Windows 98/SE/ME, 
+Windows NT, Windows 2000, XP e Vista utilizam senhas encriptadas. Ao utilizar 
+máquinas com qualquer um destes sistemas (99.9% dos casos), a opção deve ser 
+configurada como "Yes", caso contrário o Samba simplesmente não conseguirá 
+conversar com as máquinas Windows e você vai ficar quebrando a cabeça até se 
+lembrar deste parágrafo ;)
+
+A partir do Samba 3 existe a opção de fazer com que o próprio Samba mantenha as 
+senhas dos usuários sincronizadas em relação às senhas dos mesmos no sistema. 
+Antigamente, sempre que você alterava a senha de um usuário no Samba, usando o 
+"smbpasswd", precisava alterar também a senha do sistema, usando o comando 
+"passwd". As duas senhas precisam ficar em sincronismo, do contrário caímos no 
+problema das permissões, onde o Samba permite que o usuário acesse o 
+compartilhamento, mas o sistema não permite que o Samba acesse os arquivos no disco. 
+
+Para que tudo funcione, é necessário que as opções "passwd program" e "passwd chat" 
+estejam configuradas com (respectivamente) os valores: "/usr/bin/passwd %u" e 
+"*Enter\snew\sUNIX\spassword:* %n\n *Retype\snew\sUNIX\spassword:* %n\n .". 
+Estes já são os valores padrão no Swat, mas não custa verificar.  
+
+
+Neste caso, o Samba não considera a opção "hosts deny = 192.168.1.43" 
+como uma exceção, mas sim como um erro de configuração. Para bloquear a 
+máquina, você deveria usar: hosts allow = 192.168.1. EXCEPT 192.168.1.43. 
+Numa rede Windows, uma das máquinas fica sempre responsável por montar e atualizar 
+uma lista dos compartilhamentos disponíveis e enviá-la aos demais, conforme 
+solicitado. O host que executa esta função é chamado de "Master Browser".
+
+Para isso, configure esta opção com um valor alto, 100 por exemplo, para que ele 
+sempre ganhe as eleições. O default dessa opção é 20, que faz com que ele perca para 
+qualquer máquina Windows NT, Windows 2000 ou XP. Para completar, deixe a opção 
+"Local Master" e "Preferred Master" como "Yes".  
+
+
+Abaixo, deixe a opção Wins Support ativada (Yes). A opção Wins Server deve ser 
+deixada em branco, a menos que exista na rede algum servidor Wins (rodando o NT 
+server ou o 2K server) ao qual o servidor Linux esteja subordinado.  
+Caso o único servidor seja a máquina Linux, você pode configurar as máquinas 
+Windows para utilizá-la como servidor Wins, para isto basta colocar o seu endereço IP 
+no campo "Servidor Wins" na configuração de rede das estações. Terminando, 
+pressione o botão "Commit Changes" no topo da tela para que as alterações sejam 
+salvas no arquivo "/etc/samba/smb.conf". 
+
+Depois de cadastrar os usuários no sistema e no Samba e configurar a seção Globals, 
+falta apenas configurar as pastas que serão compartilhadas com as estações, através da 
+seção "Shares". 
+
+Depois de criado um compartilhamento, escolha-o na lista e clique no botão "Choose 
+Share" para configurá-la. Você verá uma lista de opções, contendo campos para 
+especificar usuários válidos e inválidos, usuários que podem ou não escrever no 
+compartilhamento, nomes ou endereços de máquinas, entre outras opções.  
+
+
+Configurando manualmente o /etc/samba/smb.conf 
+Toda a configuração do Samba, incluindo as configurações gerais do servidor, 
+impressoras e todos os compartilhamentos, é feita em um único arquivo de 
+configuração, o "/etc/samba/smb.conf". Programas de configuração, como o Swat, 
+simplesmente lêem este arquivo, "absorvem" as configurações atuais e depois geram o 
+arquivo novamente com as alterações feitas. Isso permite que o Swat coexista com a 
+edição manual do arquivo. Como o formato é bastante simples e conciso, muitas vezes é 
+mais rápido e até mais simples editar diretamente o arquivo do que através do Swat. O 
+único porém é que o Swat remove todos os seus comentários e formatação, deixando 
+apenas as opções.  
+O smb.conf possui as mesmas seções mostradas no swat: global, homes, printers, etc. 
+Ao instalar o Samba através do ícone mágico, é instalado um smb.conf já pré
+configurado com uma configuração de exemplo. A idéia é que o servidor já fique 
+acessível imediatamente depois da instalação e você possa se concentrar em adicionar 
+os usuários e compartilhamentos. 
+Para abri-lo, com privilégios de root, você pode digitar simplesmente "kdesu kedit /etc/samba/smb.conf" no 
+terminal. Veja um exemplo do conteúdo do arquivo. Lembre-se de que as linhas iniciadas com # são comentários, não 
+interferem na configuração: 
+# Arquivo de Configuração do Samba escrito para o Kurumin 
+# Por Carlos E. Morimoto 
+# Seção Globals: 
+# Aqui vão parâmetros gerais, como o nome da máquina e grupo de trabalho.  
+[global] 
+workgroup = GRUPO 
+netbios name = KURUMIN 
+server string = %h server (Samba %v) 
+name resolve order = lmhosts, host, wins, bcast  
+printcap name = lpstat 
+encrypt passwords = Yes 
+wins support = yes  
+preferred master = yes  
+panic action = /usr/share/samba/panic-action %d 
+invalid users = root 
+preserve case = no 
+short preserve case = no 
+default case = lower  
+os level = 100 
+[homes] 
+comment = Home Directories 
+create mask = 0700 
+directory mask = 0700 
+browseable = No 
+[printers] 
+comment = Todas as Impressoras 
+path = /var/spool/samba 
+guest ok = yes 
+public = yes 
+printable = yes 
+browseable = yes 
+use client driver = yes 
+# Compartilhamentos: 
+# Aqui vai a configuração das pastas compartilhadas. Você pode criar mais  
+# compartilhamentos usando o Swat ou editando diretamente este arquivo.  
+# Veja como funciona a configuração: 
+# 
+# [publico] : O nome do Compartilhamento, como aparecerá no ambiente de redes.  
+# path = /home/samba_publico : A pasta local que está sendo compartilhada. 
+# available = yes : O compartilhamento está disponível?  
+# Mudando para "available = no" ele ficará "congelado" e ninguém poderá acessar.  
+# browseable = yes : O compartilhamento aparecerá na rede? 
+# Mudando para "browseable = no" ele virará um compartilhamento oculto 
+# writable = yes : O compartilhamento fica disponível para leitura e escrita. 
+# writable = no : o compartilhamento fica disponível para somente leitura. 
+# Agora é a sua vez: 
+#[compartilhamento] 
+# path = /pasta/pasta 
+# available = yes 
+# browseable = yes 
+# writable = yes 
+Se você quiser criar um novo compartilhamento, chamado "arquivos", que dá acesso à 
+pasta "/home/arquivos" e pode ser acessado em modo somente-leitura por todos os 
+usuários cadastrados no Samba, bastaria adicionar as linhas: 
+[arquivos] 
+path = /home/arquivos 
+available = yes 
+writable = no 
+Se você quiser permitir que o compartilhamento fique com permissão de escrita e 
+leitura, mas fique acessível apenas pelos usuários "maria" e "joao" (os outros usuários 
+não acessam nem para leitura), adicione a linha: "valid users = joao maria". A entrada 
+ficaria: 
+[arquivos] 
+path = /home/arquivos 
+available = yes 
+writable = yes 
+valid users = maria, joao 
+Se preferir, você pode continuar permitindo que os outros acessem o compartilhamento 
+para leitura e criar uma lista de escrita, contendo a maria e o joao: 
+[arquivos] 
+path = /home/arquivos 
+available = yes 
+writable = yes 
+write list = maria, joao 
+Outra forma de limitar o acesso é usar a opção "hosts allow" para permitir que apenas 
+alguns endereços IP possam acessar os compartilhamentos, como em: 
+[arquivos] 
+path = /home/arquivos 
+available = yes 
+writable = yes 
+hosts allow = 192.168.0.2, 192.168.0.5 
+É possível ainda combinar as duas coisas, permitindo que apenas a maria e o joao 
+acessem o compartilhamento e, ainda assim, só se estiverem usando uma das duas 
+máquinas permitidas, como em: 
+[arquivos] 
+path = /home/arquivos 
+available = yes 
+writable = yes 
+write list = maria, joao 
+hosts allow = 192.168.0.2, 192.168.0.5 
+O Swat serve apenas como uma interface para a edição deste arquivo. Seja qual for o 
+modo de configuração escolhido, basta fazer backups regulares deste arquivo para 
+restaurar as configurações do servidor em caso de problemas. Além do arquivo 
+smb.conf, salve também o arquivo "/etc/samba/smbpasswd", que contém os usuários e 
+senhas. 
+Sempre que alterar manualmente smb.conf, ou mesmo alterar algumas opções pelo 
+Swat e quiser verificar se as configurações estão corretas, rode o testparm (basta 
+chamá-lo no terminal). Ele funciona como uma espécie de debug, indicando erros 
+grosseiros no arquivo. Depois de fazer qualquer alteração, reinicie o Samba usando o 
+comando "/etc/init.d/samba restart" ou "service smb restart". O comando smbstatus 
+também é muito útil, pois permite verificar quais estações estão conectadas ao servidor 
+e quais recursos estão sendo acessados no momento.  
