@@ -1,0 +1,510 @@
+Instalando o Squid 
+O Squid é composto de um único pacote, por isso a instalação é simples. Instale o 
+pacote "squid" usando o apt-get, yum ou urpmi, como em: 
+# apt-get install squid 
+
+Toda a configuração do Squid é feita em um único arquivo, o "/etc/squid/squid.conf". 
+
+Uma das mais usadas é o 
+Webmin, disponível em várias distribuições. A função destas ferramentas é 
+disponibilizar as opções através de uma interface gráfica e gerar o arquivo de 
+configuração com base nas opções escolhidas. 
+
+# mv /etc/squid/squid.conf /etc/squid/squid.conf.velho  
+... e crie um novo arquivo "/etc/squid/squid.conf", com apenas as quatro linhas abaixo: 
+http_port 3128 
+visible_hostname kurumin 
+acl all src 0.0.0.0/0.0.0.0 
+http_access allow all  
+Estas linhas são o suficiente para que o Squid "funcione". Como você percebeu, aquele 
+arquivo de configuração gigante tem mais uma função informativa, citando e explicando 
+as centenas de opções disponíveis. Não se esqueça de substituir o "kurumin" na opção 
+"visible_hostname" pelo nome correto do seu servidor, como informado pelo comando 
+"hostname". 
+As quatro linhas dizem o seguinte: 
+http_port 3128: A porta onde o servidor Squid vai ficar disponível. A porta 3128 é o default. 
+visible_hostname kurumin: O nome do servidor, o mesmo que foi definido na configuração da rede.  
+acl all src 0.0.0.0/0.0.0.0 e http_access allow all: Estas duas linhas criam uma acl (uma política de acesso) 
+chamada "all" (todos), incluindo todos os endereços IP possíveis. Ela permite que qualquer um dentro desta 
+lista use o proxy, ou seja, permite que qualquer um use o proxy, sem limitações.  
+
+Para testar a configuração, reinicie o servidor Squid com o comando: 
+# /etc/init.d/squid restart 
+
+
+http_port 3128 
+visible_hostname kurumin 
+acl all src 0.0.0.0/0.0.0.0 
+acl manager proto cache_object 
+acl localhost src 127.0.0.1/255.255.255.255 
+acl SSL_ports port 443 563 
+acl Safe_ports port 80 # http 
+acl Safe_ports port 21 # ftp 
+acl Safe_ports port 443 563 # https, snews 
+acl Safe_ports port 70 # gopher 
+acl Safe_ports port 210 # wais 
+acl Safe_ports port 280 # http-mgmt 
+acl Safe_ports port 488 # gss-http 
+acl Safe_ports port 591 # filemaker 
+acl Safe_ports port 777 # multiling http 
+acl Safe_ports port 901 # swat 
+acl Safe_ports port 1025-65535 # portas altas 
+acl purge method PURGE 
+acl CONNECT method CONNECT 
+http_access allow manager localhost 
+http_access deny manager 
+http_access allow purge localhost 
+http_access deny purge 
+http_access deny !Safe_ports 
+http_access deny CONNECT !SSL_ports 
+acl redelocal src 192.168.1.0/24 #colocar os intervalor necessários da rede local aqui
+http_access allow localhost 
+http_access allow redelocal 
+http_access deny all
+
+
+1- A configuração da quantidade de memória RAM dedicada ao cache é feita 
+adicionando a opção "cache_mem", que contém a quantidade de memória que será 
+dedicada ao cache. Para reservar 64 MB, por exemplo, a linha ficaria: 
+cache_mem 64 MB 
+2- Abaixo vai mais uma linha, que determina o tamanho máximo dos arquivos que serão 
+guardados no cache feito na memória RAM (o resto vai para o cache feito no HD). O 
+cache na memória é muito mais rápido, mas como a quantidade de RAM é muito 
+limitada, é melhor deixá-la disponível para páginas web, figuras e arquivos pequenos 
+em geral. Para que o cache na memória armazene arquivos de até 64 KB, por exemplo, 
+adicione a linha: 
+maximum_object_size_in_memory 64 KB 
+3- Em seguida vem a configuração do cache em disco, que armazenará o grosso dos 
+arquivos. Por default, o máximo são downloads de 16 MB e o mínimo é zero, o que faz 
+com que mesmo imagens e arquivos pequenos sejam armazenados no cache. Quase 
+sempre é mais rápido ler a partir do cache do que baixar de novo da web, mesmo que o 
+arquivo seja pequeno. 
+
+Se você faz download de arquivos grandes e deseja que eles fiquem armazenados no 
+cache, aumente o valor da opção "maximum_object_size". Isso é especialmente útil 
+para quem precisa baixar muitos arquivos através do apt-get ou Windows update em 
+muitos micros da rede. Se você quiser que o cache armazene arquivos de até 512 MB, 
+por exemplo, as linhas ficariam: 
+maximum_object_size 512 MB 
+minimum_object_size 0 KB 
+
+Você pode definir ainda a percentagem de uso do cache que fará o Squid começar a 
+descartar os arquivos mais antigos. Por padrão, sempre que o cache atingir 95% de uso, 
+serão descartados arquivos antigos até que a percentagem volte para um número abaixo 
+de 90%: 
+cache_swap_low 90 
+cache_swap_high 95 
+4- Depois vem a configuração do tamanho do cache em disco propriamente dita, que é 
+composta por quatro valores. O primeiro, (/var/spool/squid) indica a pasta onde o 
+Squid armazena os arquivos do cache. Você pode querer alterar para uma pasta em uma 
+partição separada, por exemplo. O "2048" indica a quantidade de espaço no HD (em 
+MB) que será usada para o cache. Aumente o valor se você tem muito espaço no HD do 
+servidor e quer que o Squid guarde os downloads por muito tempo.  
+Finalmente, os números 16 256 indicam a quantidade de subpastas que serão criadas 
+dentro do diretório. Por padrão, temos 16 pastas com 256 subpastas cada uma. O 
+número "ideal" de pastas e subpastas para um melhor desempenho varia de acordo com 
+o sistema de arquivos usado, mas esta configuração padrão é adequada para a maioria 
+das situações: 
+cache_dir ufs /var/spool/squid 2048 16 256 
+
+5- Você pode definir ainda o arquivo onde são guardados os logs de acesso do Squid. 
+Por padrão, o Squid guarda o log de acesso no arquivo "/var/log/squid/access.log". Este 
+arquivo é usado pelo Sarg para gerar as páginas com as estatísticas de acesso.  
+cache_access_log /var/log/squid/access.log 
+
+6- Mais uma configuração que você pode querer alterar é o padrão de atualização do 
+cache. Estas três linhas precisam sempre ser usadas em conjunto, ou seja, você pode 
+alterá-las, mas sempre as três precisam estar presentes no arquivo. Eliminando um, o 
+Squid ignora as outras duas e usa o default. 
+Os números indicam o intervalo (em minutos) que o Squid irá aguardar antes de 
+verificar se um item do cache (uma página, por exemplo) foi atualizado, para cada um 
+dos três protocolos. O primeiro número (o 15) indica que o Squid verificará (a cada 
+acesso) se as páginas e arquivos com mais de 15 minutos foram atualizados. Ele faz 
+uma verificação rápida, checando o tamanho do arquivo, o que é rápido. Se o arquivo 
+não mudou, ele continua fornecendo aos clientes o arquivo que está no cache, 
+economizando banda da conexão 
+O terceiro número (o 2280, equivalente a dois dias) indica o tempo máximo, depois do 
+qual o objeto é sempre verificado. Além do http e ftp, o Squid suporta o protocolo 
+gopher, que era muito usado nos primórdios da internet para localizar documentos de 
+texto, mas perdeu a relevância hoje em dia: 
+refresh_pattern ^ftp: 15 20% 2280 
+refresh_pattern ^gopher: 15 0% 2280 
+refresh_pattern . 15 20% 2280 
+
+Depois de adicionar estas configurações todas, o nosso arquivo de configuração já ficará 
+bem maior: 
+http_port 3128 
+visible_hostname kurumin 
+cache_mem 32 MB 
+maximum_object_size_in_memory 64 KB 
+maximum_object_size 512 MB 
+minimum_object_size 0 KB 
+cache_swap_low 90 
+cache_swap_high 95 
+cache_dir ufs /var/spool/squid 2048 16 256 
+cache_access_log /var/log/squid/access.log 
+refresh_pattern ^ftp: 15 20% 2280 
+refresh_pattern ^gopher: 15 0% 2280 
+refresh_pattern . 15 20% 2280 
+acl all src 0.0.0.0/0.0.0.0 
+acl manager proto cache_object 
+acl localhost src 127.0.0.1/255.255.255.255 
+acl SSL_ports port 443 563 
+acl Safe_ports port 80 # http 
+acl Safe_ports port 21 # ftp 
+acl Safe_ports port 443 563 # https, snews 
+acl Safe_ports port 70 # gopher 
+acl Safe_ports port 210 # wais 
+acl Safe_ports port 1025-65535 # unregistered ports 
+acl Safe_ports port 280 # http-mgmt 
+acl Safe_ports port 488 # gss-http 
+acl Safe_ports port 591 # filemaker 
+acl Safe_ports port 777 # multiling http 
+acl Safe_ports port 901 # SWAT 
+acl purge method PURGE 
+acl CONNECT method CONNECT 
+http_access allow manager localhost 
+http_access deny manager 
+http_access allow purge localhost 
+http_access deny purge 
+http_access deny !Safe_ports 
+http_access deny CONNECT !SSL_ports 
+acl redelocal src 192.168.1.0/24 
+http_access allow localhost 
+http_access allow redelocal 
+http_access deny all
+
+O Squid permite bloquear sites indesejados de forma relativamente simples, onde você 
+inclui na configuração uma acl contendo os sites não permitidos e cria uma política de 
+acesso que bloqueia o acesso a eles.  
+Isso é feito usando o parâmetro "dstdomain" (destination domain). Veja um exemplo: 
+acl bloqueados dstdomain orkut.com playboy.abril.com.br 
+http_access deny bloqueados
+
+Existe uma ressalva: muitos sites podem ser acessados tanto com o "www" quanto sem. 
+Para o Squid, "www.orkut.com" e "orkut.com" são duas coisas diferentes. Bloqueando o 
+"orkut.com" os usuários ainda conseguirão acessar o site através do "www.orkut.com" e 
+vice-versa. Para bloquear ambos, é preciso incluir as duas possibilidades dentro da 
+regra, como em:  
+acl bloqueados dstdomain orkut.com www.orkut.com playboy.abril.com.br  
+http_access deny bloqueados 
+
+
+Você pode incluir quantos domínios quiser dentro da regra, basta separá-los por espaço 
+e deixar tudo na mesma linha. Se a regra começar a ficar muito grande, você tem a 
+opção de transferir as entradas para um arquivo. Neste caso, crie um arquivo de texto 
+simples, com todos os domínios desejados (um por linha) e use a regra abaixo na 
+configuração do Squid. No exemplo, estou usando o arquivo "/etc/squid/bloqueados":  
+acl bloqueados url_regex -i "/etc/squid/bloqueados" 
+http_access deny bloqueados 
+
+
+De qualquer forma, em alguns ambientes, pode ser mais fácil bloquear inicialmente o 
+acesso a todos os sites e ir abrindo o acesso a apenas alguns sites específicos, conforme 
+a necessidade. Neste caso, invertemos a lógica da regra. Criamos um arquivo com sites 
+permitidos, adicionamos a regra que permite o acesso a eles e em seguida bloqueamos o 
+acesso a todos os demais, como neste exemplo:  
+acl permitidos url_regex -i "/etc/squid/permitidos" 
+http_access allow permitidos 
+http_access deny all 
+
+ De qualquer forma, 
+você pode criar diretamente regras que bloqueiem determinados endereços IP, o que é 
+útil em casos de servidores sem domínio registrado, ou que respondam por vários 
+domínios. Neste caso, a regra ficaria: 
+acl ips-bloqueados dst 200.234.21.23 200.212.15.45 
+http_access deny ips-bloqueados  
+Você pode descobrir rapidamente o endereço IP de um determinado domínio usando o 
+comando "host", como em: 
+$ host google.com 
+google.com A 216.239.57.99 
+google.com A 216.239.37.99 
+
+
+
+Depois de adicionar as novas regras, nosso arquivo de configuração ficaria assim: 
+http_port 3128 
+visible_hostname kurumin 
+cache_mem 32 MB 
+maximum_object_size_in_memory 64 KB 
+maximum_object_size 512 MB 
+minimum_object_size 0 KB 
+cache_swap_low 90 
+cache_swap_high 95 
+cache_dir ufs /var/spool/squid 2048 16 256 
+cache_access_log /var/log/squid/access.log 
+refresh_pattern ^ftp: 15 20% 2280 
+refresh_pattern ^gopher: 15 0% 2280 
+refresh_pattern . 15 20% 2280 
+acl all src 0.0.0.0/0.0.0.0 
+acl manager proto cache_object 
+acl localhost src 127.0.0.1/255.255.255.255 
+acl SSL_ports port 443 563 
+acl Safe_ports port 80 # http 
+acl Safe_ports port 21 # ftp 
+acl Safe_ports port 443 563 # https, snews 
+acl Safe_ports port 70 # gopher 
+acl Safe_ports port 210 # wais 
+acl Safe_ports port 1025-65535 # unregistered ports 
+acl Safe_ports port 280 # http-mgmt 
+acl Safe_ports port 488 # gss-http 
+acl Safe_ports port 591 # filemaker 
+acl Safe_ports port 777 # multiling http 
+acl Safe_ports port 901 # SWAT 
+acl purge method PURGE 
+acl CONNECT method CONNECT 
+http_access allow manager localhost 
+http_access deny manager 
+http_access allow purge localhost 
+http_access deny purge 
+http_access deny !Safe_ports 
+http_access deny CONNECT !SSL_ports 
+acl bloqueados url_regex -i "/etc/squid/bloqueados" 
+http_access deny bloqueados 
+acl redelocal src 192.168.1.0/24 
+http_access allow localhost 
+http_access allow redelocal 
+http_access deny all 
+
+
+Crie mais um arquivo de texto, contendo as palavras que devem ser bloqueadas (uma 
+por linha) e adicione a regra abaixo, contendo a localização do arquivo: 
+acl nomesproibidos dstdom_regex "/etc/squid/nomesproibidos" 
+http_access deny nomesproibidos 
+
+
+Você pode personalizar as páginas de erro editando os arquivos dentro da pasta 
+"/usr/share/squid/errors/English" ou "/usr/share/squid/errors/Portuguese" (de acordo 
+com a língua definida na configuração). São várias páginas html, uma para cada tipo de 
+erro indicado.  
+
+
+
+
+Gerenciando o uso da banda 
+O Squid oferece uma forma simples de limitar o uso da banda disponível e definir o 
+quanto cada usuário pode usar (mantendo parte do link livre para os demais), utilizando 
+um recurso chamado "delay pools". Por exemplo, imagine que você tem um link de 1 
+megabit para uma rede com 20 usuários. Se cada um puder ficar baixando o que quiser, 
+é provável que a rede fique saturada em determinados horários, deixando a navegação 
+lenta para todo mundo.  
+Você pode evitar isso limitando a banda que cada usuário pode usar e a banda total, que 
+todos os usuários somados poderão usar simultaneamente. É recomendável, neste caso, 
+que o servidor proxy (que combina todos os acessos via http) consuma um pouco menos 
+que o total de banda disponível, de forma a sempre deixar um pouco reservado para 
+outros protocolos.  
+Um link de 1 megabit (1024 kbits) corresponde a 131.072 bytes por segundo. Nas 
+regras do Squid, sempre usamos bytes, por isso lembre-se de fazer a conversão, 
+dividindo tudo por 8 e multiplicando por 1024 para ter o número em bytes.  
+Podemos limitar a banda total usada pelo Squid a 114.688 bytes por segundo, deixando 
+128 kbits do link livres para outros protocolos e limitar cada usuário a no máximo 
+16.384 bytes por segundo, que correspondem a 128 kbits. Nem todos os usuários vão 
+ficar baixando arquivos a todo momento, por isso o valor ideal reservado a cada usuário 
+vai variar muito de acordo com a rede. Você pode acompanhar o uso do link e ir 
+ajustando o valor conforme a utilização.  
+Neste caso, a parte final do arquivo de configuração ficaria: 
+acl redelocal src 192.168.1.0/24 
+delay_pools 1 
+delay_class 1 2 
+delay_parameters 1 114688/114688 16384/16384 
+delay_access 1 allow redelocal 
+http_access allow localhost 
+http_access allow redelocal 
+http_access deny all 
+
+Concluindo, mais um tipo de bloqueio que é útil em muitas situações é com relação a 
+formatos de arquivos. Você pode querer bloquear o download de arquivos .exe ou .sh 
+para dificultar a instalação de programas nas estações, ou bloquear arquivo .avi ou .wmf 
+para economizar banda da rede, por exemplo. Neste caso, você pode usar a regra a 
+seguir, especificando as extensões de arquivo desejadas: 
+acl video url_regex -i \.avi 
+http_access deny video 
+
+
+Bloqueando por horário  
+As regras a seguir fazem com que o proxy recuse conexões feitas dentro de 
+determinados horários. Você pode definir regras para períodos específicos e combiná
+las para bloquear todos os horários em que você não quer que o proxy seja usado. Para 
+que o proxy bloqueie acessos feitos entre meia-noite e 6:00 da manhã e no horário de 
+almoço, por exemplo, você usaria as regras: 
+acl madrugada time 00:00-06:00 
+http_access deny madrugada
+acl almoco time 12:00-14:00 
+http_access deny almoco 
+Estas regras iriam novamente antes da regra "http_access allow redelocal" no arquivo de 
+configuração. 
+
+Agora imagine que você quer fazer diferente. Ao invés de bloquear o acesso na hora de 
+almoço, você quer deixar o proxy aberto, para que aqueles que queiram acessar o Orkut 
+ou acessar os e-mails possam fazer isso fora do horário de trabalho. Neste caso você 
+usaria uma regra como: 
+acl almoco time 12:00-14:00 
+http_access allow almoco 
+Esta regra entraria no arquivo de configuração antes das regras "http_access deny 
+bloqueados" e "http_access deny nomesproibidos". Assim, os acessos que forem aceitos 
+pela regra do almoço não passarão pelas regras que fazem o bloqueio.  
+
+Você pode também combinar o bloqueio de palavras ou domínio com as regras de 
+bloqueio por horário, permitindo que os usuários acessem um determinado site apenas 
+no horário de almoço, por exemplo. A regra, neste caso, seria:  
+acl almoco time 12:00-14:00 
+acl orkut dstdomain orkut.com www.orkut.com 
+http_access allow orkut almoco 
+Assim, o acesso ao site (que normalmente estaria bloqueado em uma acl mais adiante) é 
+permitido dentro do horário de almoço.  
+
+
+
+
+
+
+
+Configurando um proxy transparente 
+Uma garantia de que os usuários realmente vão usar o proxy e, ao mesmo tempo, uma 
+grande economia de trabalho e dor de cabeça para você é o recurso de proxy 
+transparente. Ele permite configurar o Squid e o firewall de forma que o servidor proxy 
+fique escutando todas as conexões na porta 80. Mesmo que alguém tente desabilitar o 
+proxy manualmente nas configurações do navegador, ele continuará sendo usado.  
+Outra vantagem é que este recurso permite usar o proxy sem precisar configurar 
+manualmente o endereço em cada estação. Basta usar o endereço IP do servidor rodando 
+o proxy como gateway da rede.  
+
+Lembre-se de que, para usar o proxy transparente, você já deve estar compartilhando a 
+conexão no servidor via NAT, como vimos anteriormente. O proxy transparente apenas 
+fará com que o proxy intercepte os acessos na porta 80, obrigando tudo a passar pelas 
+suas regras de controle de acesso, log, autenticação e cache. 
+
+
+Para ativar o proxy transparente, rode o comando abaixo. Ele direciona as requisições 
+recebidas na porta 80 para o Squid:  
+# iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j \ 
+REDIRECT --to-port 3128 
+O "eth0" no comando indica a placa da rede local, onde o proxy recebe as requisições 
+dos outros micros da rede e o "3128" indica a porta usada pelo Squid. Adicione o 
+comando junto com os 4 comandos que compartilham a conexão no final do arquivo 
+"/etc/rc.local" ou ao seu script de firewall para que ele seja executado durante o boot.
+
+Finalmente, você precisa ativar o suporte ao modo transparente dentro do arquivo 
+"/etc/squid/squid.conf" e reiniciar o serviço.  
+Se você está usando uma versão recente, do Squid 2.6 em diante, a configuração é mais 
+simples. Basta substituir a linha "http_port 3128" no início do arquivo por: 
+http_port 3128 transparent  
+Ou seja, na verdade você precisa apenas adicionar o "transparent", para que o Squid 
+passe a entender as requisições redirecionadas pela regra do firewall. 
+
+
+
+
+
+No caso das versões mais antigas, anteriores à 2.6 (como a usada no Debian Sarge e no 
+Ubuntu 5.10), é necessário adicionar as quatro linhas abaixo, no final do arquivo 
+"/etc/squid/squid.conf" (neste caso, sem alterar a linha "http_port 3128"): 
+httpd_accel_host virtual 
+httpd_accel_port 80 
+httpd_accel_with_proxy on 
+httpd_accel_uses_host_header on 
+
+
+
+Em qualquer um dos dois casos, você precisa reiniciar o serviço para que a alteração 
+entre em vigor: 
+# /etc/init.d/squid restart 
+Em caso de dúvida sobre qual versão do Squid está instalada, use o comando "squid -v", 
+que além de reportar a versão, informa todas as opções que foram usadas durante a 
+compilação: 
+# squid -v
+
+
+Em resumo, você vai ter a conexão compartilhada via NAT no servidor e configurará os 
+clientes para acessar através dela, colocando o servidor como gateway da rede. Ao 
+ativar o proxy transparente, a configuração dos clientes continua igual, a única diferença 
+é que agora (graças à nova regra do Iptables) todo o tráfego da porta 80 passará, 
+obrigatoriamente, pelo servidor Squid.  
+Isso permite que você se beneficie do log dos acessos e do cache feito pelo proxy, sem 
+ter que se sujeitar às desvantagens de usar um proxy, como ter que configurar 
+manualmente cada estação. 
+
+
+O Sarg é incluído na maioria das distribuições atuais, em alguns casos instalado por 
+padrão junto com o Squid. No Debian e derivados ele pode ser instalado com um:  
+# apt-get install sarg  
+
+
+protegendo nomes de dominos em expressoes regulares
+Ao instalar, comece verificando se já não existe um pacote disponível na distribuição 
+que está usando. O DansGuardian é um pacote de uso muito comum; por isso, a maioria 
+das distribuições o inclui nos CDs de instalação. No Debian, por exemplo, você pode 
+instalá-lo com um: 
+# apt-get install dansguardian  
+Depois de instalar o pacote, inicie-o com o comando:  
+# /etc/init.d/dansguardian start 
+ou:  
+# dansguardian & 
+
+
+Para que o DansGuardian funcione, é preciso que o Squid esteja instalado e ativo. Ele 
+trabalha sobre o Squid, implementando suas políticas de acesso, mas deixando que o 
+próprio Squid faça o acesso à web, cache e autenticação.  
+O principal arquivo de configuração é o "/etc/dansguardian/dansguardian.conf". Ao 
+editá-lo pela primeira vez, é importante verificar algumas opções: 
+# UNCONFIGURED
+
+
+Esta linha deve ficar comentada, indicando que o arquivo já foi configurado por você.  
+language = 'portuguese' 
+Esta opção configura a língua em que as mensagens de acesso bloqueado serão 
+mostradas aos clientes.  
+loglocation = '/var/log/dansguardian/access.log' 
+Aqui vai a localização do arquivo de log do dansguardian, onde ficam armazenados os 
+endereços das páginas cujo acesso foi bloqueado. Serve tanto para verificar a eficiência 
+do filtro, quanto para identificar falsos-positivos, ou seja, páginas legítimas que estão 
+sendo bloqueadas por engano. Estas exceções podem ser especificadas individualmente 
+no arquivo "/etc/dansguardian/exceptionsitelist", que funciona como uma white list, 
+contendo uma lista de páginas que sempre são permitidas, mesmo que sejam 
+encontradas palavras proibidas dentro do texto.  
+filterport = 8080
+
+
+A porta onde o DansGuardian fica ativo. Ele sempre deve utilizar uma porta diferente 
+do Squid, pois são duas coisas separadas. O padrão é a porta 8080. 
+proxyip = 127.0.0.1 
+O endereço IP do servidor proxy que será usado. Por padrão, ele vai utilizar uma cópia 
+do Squid ativa na mesma máquina, mas é possível utilizar outro servidor Squid 
+disponível na rede.  
+proxyport = 3128 
+A porta TCP onde o servidor Squid especificado na opção acima está ativo. Lembre-se 
+de que, por padrão, o Squid usa a porta 3128.  
+
+No final, o site recebe uma nota, apelidada pelos desenvolvedores de 
+"naughtynesslimit", ou "índice de sem-vergonhice", resultado da soma de todas as 
+palavras boas e ruins. Você define um índice máximo a ser tolerado no arquivo 
+"/etc/dansguardian/dansguardianf1.conf", na opção: 
+naughtynesslimit = 160 
+
+Como você pode notar dando uma olhada no conteúdo dos arquivos das listas de 
+palavras, o DansGuardian vem configurado com listas em inglês, que deixam passar 
+muitos sites nacionais. Você pode baixar um arquivo com listas em outras línguas, 
+incluindo português no:  
+http://dansguardian.org/downloads/grosvenor/languages.tar.gz
+ Para instalar, descompacte o arquivo "languages.tar.gz" e copie os arquivos de dentro da 
+pasta "languages", que será criada para a pasta "/etc/dansguardian/phraselist/". Falta 
+agora configurar o DansGuardian para utilizar os novos arquivos. Para isso, abra o 
+arquivo "/etc/dansguardian/weightedphraselist" e adicione as linhas:  
+.Include</etc/squid/dansguardian/languages/weightedphraselist.pornsites.portuguese> 
+.Include</etc/squid/dansguardian/languages/weightedphraselist.pornwords.portuguese>
+
+Aparentemente, os arquivos disponíveis no site foram escritos por um estrangeiro. Por 
+isso, não se adaptam bem à nossa realidade. Se decidir corrigir os arquivos, não deixe de 
+enviá-los para os mantenedores, para que sejam incluídos no pacote.  
+Note que neste arquivo são especificados todos os arquivos de palavras que são 
+utilizados. Na pasta existem várias categorias diferentes. Em algumas situações, você 
+pode querer desabilitar algumas das categorias, a fim de flexibilizar o filtro. Você pode 
+adicionar novas palavras ou editar o peso de cada uma, editando diretamente os 
+arquivos.  
+Concluindo, abra também o arquivo "/etc/dansguardian/bannedphraselist" e inclua a 
+linha:  
+.Include</etc/squid/dansguardian/languages/bannedphraselist.portuguese> 
+Lembre-se de que é necessário reiniciar o DansGuardian para que qualquer uma das 
+alterações tenha efeito: 
+
+# /etc/init.d/dansguardian restart 

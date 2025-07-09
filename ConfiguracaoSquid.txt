@@ -1,0 +1,80 @@
+Instalando o squid 
+# apt-get install squid
+Toda a configuração do Squid é feita em um único arquivo, o "/etc/squid/squid.conf". 
+Caso você esteja usando uma versão antiga do Squid, como a incluída no Debian 
+Woody, por exemplo, o arquivo pode ser o "/etc/squid.conf". Apesar da mudança na 
+localização do arquivo de configuração, as opções descritas aqui vão funcionar sem 
+maiores problemas. 
+
+Em geral, cada distribuição inclui uma ferramenta diferente para a configuração do 
+proxy, como o ícone mágico que incluí no Kurumin. Uma das mais usadas é o 
+Webmin, disponível em várias distribuições. A função destas ferramentas é 
+disponibilizar as opções através de uma interface gráfica e gerar o arquivo de 
+configuração com base nas opções escolhidas.  
+
+
+Comece renomeando 
+o arquivo padrão:  
+# mv /etc/squid/squid.conf /etc/squid/squid.conf.velho  
+... e crie um novo arquivo "/etc/squid/squid.conf", com apenas as quatro linhas abaixo: 
+http_port 3128 
+visible_hostname kurumin 
+acl all src 0.0.0.0/0.0.0.0 
+http_access allow all  
+
+Estas linhas são o suficiente para que o Squid "funcione". Como você percebeu, aquele 
+arquivo de configuração gigante tem mais uma função informativa, citando e explicando 
+as centenas de opções disponíveis. Não se esqueça de substituir o "kurumin" na opção 
+"visible_hostname" pelo nome correto do seu servidor, como informado pelo comando 
+"hostname". 
+
+Para testar a configuração, reinicie o servidor Squid com o comando: 
+# /etc/init.d/squid restart
+
+Configure um navegador (no próprio servidor) para usar o proxy, através do endereço 
+127.0.0.1 (o localhost), porta 3128, e teste a conexão. Se tudo estiver ok, você 
+conseguirá acessar o proxy também através dos outros micros da rede local, basta 
+configurar os navegadores para usarem o proxy, fornecendo o endereço do servidor na 
+rede local. 
+
+Vamos gerar, então, um arquivo mais completo, permitindo que apenas os micros da 
+rede local possam usar o proxy e definindo mais algumas políticas de segurança. Neste 
+segundo exemplo já aproveitei algumas linhas do arquivo original, criando regras que 
+permitem o acesso a apenas algumas portas e não a qualquer coisa, como na 
+configuração anterior: 
+http_port 3128 
+visible_hostname kurumin 
+acl all src 0.0.0.0/0.0.0.0 
+acl manager proto cache_object 
+acl localhost src 127.0.0.1/255.255.255.255 
+acl SSL_ports port 443 563 
+acl Safe_ports port 80 # http 
+acl Safe_ports port 21 # ftp 
+acl Safe_ports port 443 563 # https, snews 
+acl Safe_ports port 70 # gopher 
+acl Safe_ports port 210 # wais 
+acl Safe_ports port 280 # http-mgmt 
+acl Safe_ports port 488 # gss-http 
+acl Safe_ports port 591 # filemaker 
+acl Safe_ports port 777 # multiling http 
+acl Safe_ports port 901 # swat 
+acl Safe_ports port 1025-65535 # portas altas 
+acl purge method PURGE 
+acl CONNECT method CONNECT 
+http_access allow manager localhost 
+http_access deny manager 
+http_access allow purge localhost 
+http_access deny purge 
+http_access deny !Safe_ports 
+http_access deny CONNECT !SSL_ports 
+acl redelocal src 192.168.1.0/24 
+http_access allow localhost 
+http_access allow redelocal 
+http_access deny all 
+
+Veja que agora criei duas novas acl's. A acl "localhost" contém o endereço 127.0.0.1, 
+que você utiliza ao usar o proxy localmente (ao navegar usando o próprio servidor), e a 
+acl "rede local", que inclui os demais micros da rede local. Substitua o "192.168.1.0/24" 
+pela a faixa de endereços IP e a máscara de sub-rede usada na sua rede local (o 24 
+equivale à mascara 255.255.255.0). 
+

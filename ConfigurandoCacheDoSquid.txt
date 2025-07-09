@@ -1,0 +1,6 @@
+Configurando o cache de páginas e arquivos Squid
+
+Outra coisa importante é configurar o cache do proxy. O Squid trabalha com dois tipos 
+de cache: 
+1- Cache rápido, feito usando parte da memória RAM do servidor. 
+2- Cache um pouco mais lento porém maior, feito no HD. 
