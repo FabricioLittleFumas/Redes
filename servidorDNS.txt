@@ -1,0 +1,5 @@
+Para instalação do servidor DNS é necessário instalar o Bind
+No Debian a instalação é feita com 
+	"apt-get install bind"
+Após configurar o DNS será necessário restartar o DHCP
+	# /etc/init.d/dhcp3-server restart 
