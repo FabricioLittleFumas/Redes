@@ -1,0 +1,48 @@
+# modprobe iptable_nat 
+# echo 1 > /proc/sys/net/ipv4/ip_forward 
+# iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE 
+
+para compartilhar a internet com os demais computadores da rede local
+
+iptables -A FORWARD -p tcp --tcp-flags SYN,RST SYN -m \ 
+tcpmss --mss 1400:1536 -j TCPMSS --clamp-mss-to-pmtu 
+
+para diminuir o tamanho dos pacotes
+
+adicionar em 
+"/etc/init.d/bootmisc.sh"
+para inicializacao automatica
+
+
+#!/bin/bash 
+iniciar(){ 
+modprobe iptable_nat 
+echo 1 > /proc/sys/net/ipv4/ip_forward 
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE 
+iptables -A FORWARD -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss \ 
+1400:1536 -j TCPMSS --clamp-mss-to-pmtu 
+}
+ parar(){ 
+iptables -F -t nat 
+}
+ case "$1" in  
+"start") iniciar ;;  
+"stop") parar ;;  
+"restart") parar; iniciar ;; 
+*) echo "Use os parâmetros start ou stop" 
+esac 
+Este é um shell script que aceita três funções: start, stop e restart, executando dentro de 
+cada uma os comandos que compartilham e param o compartilhamento da conexão. 
+Esta estrutura é similar à usada nos demais scripts de inicialização do sistema, como os 
+do Apache, Samba, Squid e outros serviços.  
+Transforme-o em um arquivo executável, usando o comando:  
+# chmod +x /etc/init.d/compartilhar 
+A partir daí, você pode iniciar e parar o compartilhamento usando os comandos: 
+# /etc/init.d/compartilhar start 
+# /etc/init.d/compartilhar stop 
+
+
+
+tenho um notebbok Kubuntu que wifi  que contem a conexao com a internet, esse notebook esta ligado a um roteador adsl via cabo cat5, tenho um computador windows conectado ao mesmo roteador adsl conectado com cabo cat5, quero passo a passo para que eu consiga a usar a internet no computador, usando bridge e todas a configurações em detalhes
+
+

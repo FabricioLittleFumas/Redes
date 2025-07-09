@@ -1,0 +1,22 @@
+Passo a passo para compartilhar a internet no Kubuntu
+A conexao precisar vir do Kubuntu
+O Kubuntu vai compartilhar a conexao com os demais micros na rede local 
+
+Passo 1 
+	Configurar a rede local com o gateway apontando para o endereço ip da máquina Kubuntu(nao endereço da conexao)
+Passo 2
+	Desabilitar o Dhcp do roteador
+Passo 3 
+	Deixar o gateway da rede local do Kubuntu sem endereço nenhum
+	Apagar se estiver algum conectado
+Passo 4
+	Na máquina Kubuntu executar os seguintes passos
+	# modprobe iptable_nat 
+	# echo 1 > /proc/sys/net/ipv4/ip_forward 
+	# iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE 
+	Substituir o eho0 pelo nome da placa que contem a conexao com a internet
+
+Adicione os comandos em um dos scripts de inicialização do sistema, para que eles 
+sejam executados automaticamente durante o boot. No Debian e derivados, coloque-os 
+no final do arquivo "/etc/init.d/bootmisc.sh".No Fedora, Mandriva e outros derivados 
+do Red Hat, use o arquivo "/etc/rc.d/rc.local". 
