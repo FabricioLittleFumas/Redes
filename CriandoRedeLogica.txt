@@ -1,0 +1,14 @@
+criando rede logica 
+O primeiro passo é se conectar normalmente à internet no servidor, usando as 
+configurações de sempre. A partir do momento em que ele estiver acessando, crie o 
+alias para a placa de rede "lógica" que o conectará aos micros da rede local, usando o 
+comando: 
+# ifconfig eth0:1 192.168.0.1/24 
+
+Isso fará com que o servidor passe a se comportar como se tivesse duas placas de rede, 
+uma ligada ao modem ADSL e outra ligada à rede local, respondendo no endereço 
+192.168.0.1 (você pode trocar por outro se preferir). O "/24" indica a configuração da 
+máscara de sub-rede, equivale a digitar "255.255.255.0". Para que isso funcione no 
+Debian e algumas distribuições derivadas dele, é preciso instalar o pacote "net-tools" 
+(apt-get install net-tools).
+
